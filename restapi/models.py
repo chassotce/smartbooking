@@ -44,7 +44,8 @@ class Authentication(models.Model):
 class Type(models.Model):
     name = models.CharField(max_length=255)
     isSelectable = models.BooleanField()
-    isReservable = models.BooleanField()
+    number = models.PositiveIntegerField()
+    ressources = models.ManyToManyField('Ressource')
     prestataire = models.ForeignKey('Prestataire')
 
     def __str__(self):              # __unicode__ on Python 2
@@ -53,17 +54,11 @@ class Type(models.Model):
 class Activite(models.Model):
     name = models.CharField(max_length=255)
     duration = models.PositiveIntegerField()
-    types = models.ManyToManyField(Type,through='Type_Activite')
+    types = models.ManyToManyField(Type)
     prestataire = models.ForeignKey('Prestataire')
 
     def __str__(self):              # __unicode__ on Python 2
         return self.name
-
-class Type_Activite(models.Model):
-    types = models.ForeignKey(Type)
-    activites = models.ForeignKey(Activite)
-    number = models.PositiveIntegerField(blank=True)
-
 
 class Prestation(models.Model):
     name = models.CharField(max_length=255)
@@ -92,9 +87,6 @@ class Ressource(models.Model):
     name = models.CharField(max_length=255)
     email = models.EmailField()
     isAdmin = models.BooleanField()
-    type = models.ForeignKey('Type')
-    activitys = models.ManyToManyField('Activite',blank=True)
-    ressources = models.ManyToManyField('self',blank=True,null=True)
     prestataire = models.ForeignKey('Prestataire')
 
     def __str__(self):              # __unicode__ on Python 2
@@ -111,6 +103,7 @@ class Event(models.Model):
     prestation = models.ForeignKey('Prestation',blank=True,null=True)
     activity = models.ForeignKey('Activite',blank=True,null=True)
     ressources = models.ManyToManyField('Ressource',blank=True,null=True)
+    session = models.PositiveIntegerField()
     prestataire = models.ForeignKey('Prestataire')
 
     def __str__(self):              # __unicode__ on Python 2
