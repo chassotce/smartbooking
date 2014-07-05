@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from restapi.models import Prestataire,Type,Activite,Prestation,Client,Ressource,Event,Authentication,WEEK_DAY,EVENT_TYPE,Type_Activite
+from restapi.models import Prestataire,Type,Activite,Prestation,Client,Ressource,Event,Authentication,WEEK_DAY,EVENT_TYPE
 from django.forms import widgets
 
 
@@ -7,14 +7,14 @@ class AuthenticationSerializer(serializers.HyperlinkedModelSerializer):
 
     class Meta:
         model= Authentication
-        fields = ('url',
+        fields = ('url','id',
                   'api_key')
 
 class PrestataireSerializer(serializers.HyperlinkedModelSerializer):
     use_condition = serializers.CharField(widget=widgets.Textarea)
     class Meta:
         model = Prestataire
-        fields = ('url',
+        fields = ('url','id',
                   'authentication', 'name', 'timezone', 'use_condition')
 
 
@@ -23,75 +23,58 @@ class TypeSerializer(serializers.HyperlinkedModelSerializer):
     class Meta:
         model = Type
         fields = ('url','id',
-                'name', 'isSelectable', 'isReservable','prestataire')
+                'name','number','isSelectable','ressources','prestataire')
 
-class Type_ActiviteSerializer(serializers.ModelSerializer):
-    #type = serializers.Field(source='type.name')
-    #activite = serializers.Field(source='activite.name')
 
-    class Meta:
-        model = Type_Activite
-        #fields = ('number', 'type', 'activite',)
-
-class ActiviteSerializer(serializers.ModelSerializer):
+class ActiviteSerializer(serializers.HyperlinkedModelSerializer):
     #types = Type_ActiviteSerializer(source='types',many=True)
     #types = Type_ActiviteSerializer(source='type_activite_set',many=True)
     #types = serializers.Serializer(widget=widgets.SelectMultiple,data=Type.objects.all(),instance=Type)
     class Meta:
         model = Activite
-    #    fields = (#'url',
-    #            'name', 'duration', 'types','prestataire')
+        fields = ('url','id',
+                'name', 'duration', 'types','prestataire')
 
-class PrestationSerializer(serializers.ModelSerializer):
+class PrestationSerializer(serializers.HyperlinkedModelSerializer):
 
     class Meta:
         model = Prestation
-        #fields = ('url',
-        #        'name', 'duration','price', 'activitys','activityOrder','prestataire')
+        fields = ('url','id',
+                'name', 'duration','price', 'activitys','activityOrder','prestataire')
 
 class ClientSerializer(serializers.HyperlinkedModelSerializer):
 
     class Meta:
         model = Client
-        fields = ('url',
+        fields = ('url','id',
                 'name', 'mail','adress', 'phone','prestataire')
 
 class RessourceSerializer(serializers.HyperlinkedModelSerializer):
 
-    ressources = serializers.HyperlinkedRelatedField(view_name='ressource-detail', many=True)
     class Meta:
         model = Ressource
         fields = ('url','id',
-                'name','email','isAdmin','type','activitys','ressources','prestataire')
+                'name','email','isAdmin','prestataire')
 
 class EventSerializer(serializers.ModelSerializer):
-    ressources = serializers.HyperlinkedRelatedField(view_name='ressource-detail', many=True)
     class Meta:
         model = Event
         fields = (
-                'name','type','state','start','end','rule','client','prestation','activity','ressources','prestataire')
-
-class PasswordSerializer(serializers.Serializer):
-    password = serializers.CharField(
-        widget=widgets.PasswordInput(),
-        required=False
-    )
+                'name','type','state','start','end','rule','client','prestation','activity','ressource','session','prestataire')
 
 
 class HoraireSerializer(serializers.ModelSerializer):
     rule = serializers.ChoiceField(choices=WEEK_DAY)
-    ressources = serializers.HyperlinkedRelatedField(view_name='ressource-detail', many=True)
     class Meta:
         model = Event
         fields = ('rule',
-                  'start', 'end','ressources','prestataire','state')
+                  'start', 'end','ressource','prestataire')
 
 class CongeSerializer(serializers.ModelSerializer):
-    ressources = serializers.HyperlinkedRelatedField(view_name='ressource-detail', many=True)
     class Meta:
         model = Event
         fields = (
-                  'start', 'end','ressources','prestataire','state')
+                  'start', 'end','ressource','prestataire')
 
 class AreaSerializer(serializers.Serializer):
     start = serializers.DateTimeField()
@@ -144,5 +127,18 @@ class SelectableRessourceSerializer(serializers.Serializer):
         if instance is not None:
             instance.name = attrs.get('name',instance.name)
             instance.ressources = attrs.get('ressources',instance.ressources)
+            return instance
+        return SelectableRessourceSerializer(**attrs)
+
+class DisponibiliteSerializer(serializers.Serializer):
+    event = EventSerializer()
+    typeDispo = SelectableRessourceSerializer(many=True)
+
+
+    def restore_object(self, attrs, instance=None):
+
+        if instance is not None:
+            instance.typeDispo = attrs.get('typeDispo',instance.typeDispo)
+            instance.event = attrs.get('event',instance.event)
             return instance
         return SelectableRessourceSerializer(**attrs)

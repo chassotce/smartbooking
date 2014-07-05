@@ -1,6 +1,8 @@
 from django.db import models
 from django.contrib.auth.models import User
-import pytz
+from django.utils.datetime_safe import datetime
+import pytz,time
+from datetime import timedelta
 
 # Create your models here.
 TIMEZONES = [(x, x) for x in pytz.common_timezones]
@@ -92,6 +94,19 @@ class Ressource(models.Model):
     def __str__(self):              # __unicode__ on Python 2
         return self.name
 
+class EventManager(models.Manager):
+    def deleteOld(self):
+
+        es = self.exclude(session__isnull=True).all()
+        ts = time.time()
+        st = datetime.fromtimestamp(ts)
+        st = st - timedelta(minutes=5)
+        for e in es:
+            if(datetime.fromtimestamp(e.session) < st):
+                e.delete()
+            print(e.session)
+
+
 class Event(models.Model):
     name = models.CharField(max_length=255)
     type = models.CharField(max_length=255,choices=EVENT_TYPE)
@@ -102,9 +117,10 @@ class Event(models.Model):
     client = models.ForeignKey('Client',blank=True,null=True)
     prestation = models.ForeignKey('Prestation',blank=True,null=True)
     activity = models.ForeignKey('Activite',blank=True,null=True)
-    ressources = models.ManyToManyField('Ressource',blank=True,null=True)
-    session = models.PositiveIntegerField()
+    ressource = models.ForeignKey('Ressource',blank=True,null=True)
+    session = models.FloatField(blank=True,null=True)
     prestataire = models.ForeignKey('Prestataire')
+    objects=EventManager()
 
     def __str__(self):              # __unicode__ on Python 2
         return self.name+" "+self.type

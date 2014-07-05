@@ -7,13 +7,16 @@ from rest_framework import renderers
 from rest_framework import viewsets
 from rest_framework.decorators import action
 from rest_framework.response import Response
-from restapi.models import Prestataire,Type,Activite,Prestation,Client,Ressource,Event,Authentication,EVENT_TYPE,Type_Activite
+from restapi.models import Prestataire,Type,Activite,Prestation,Client,Ressource,Event,Authentication,EVENT_TYPE
 from restapi.permissions import IsOwnerOrReadOnly
 from restapi.serializers import PrestataireSerializer,TypeSerializer,ActiviteSerializer,PrestationSerializer\
-    ,ClientSerializer,EventSerializer,RessourceSerializer,PasswordSerializer,AuthenticationSerializer,HoraireSerializer\
-    ,CongeSerializer,DispoSerializer,Type_ActiviteSerializer,SelectableRessourceSerializer
+    ,ClientSerializer,EventSerializer,RessourceSerializer,AuthenticationSerializer,HoraireSerializer\
+    ,CongeSerializer,DispoSerializer,SelectableRessourceSerializer,DisponibiliteSerializer
 from dateutil.rrule import *
 from django.db.models import Q
+from datetime import timedelta
+import time
+from restapi.permissions import UnsafeSessionAuthentication
 
 class AuthenticationViewSet(viewsets.ModelViewSet):
     """
@@ -135,22 +138,6 @@ class RessourceViewSet(viewsets.ModelViewSet):
     serializer_class = RessourceSerializer
     permission_classes = (permissions.AllowAny,)
 
-    def pre_save(self, obj):
-        obj.user_id = 1
-        obj.set_ressource = None
-
-    @action()
-    def set_password(self, request, pk=None):
-        user = self.get_object()
-        serializer = PasswordSerializer(data=request.DATA)
-        if serializer.is_valid():
-            user.set_password(serializer.data['password'])
-            user.save()
-            return Response({'status': 'password set'})
-        else:
-            return Response(serializer.errors,
-                            status=status.HTTP_400_BAD_REQUEST)
-
 class EventViewSet(viewsets.ModelViewSet):
     """
     This endpoint presents code snippets.
@@ -190,11 +177,11 @@ class HoraireViewSet(viewsets.ModelViewSet):
         obj.type = 'DISPONIBLE'
         obj.state = 'CONFIRMED'
 
-    def post_save(self, obj, created=False):
-        if(obj.ressources.count() == 0):
-            obj.ressources.clear()
-            obj.ressources.add(Ressource.objects.get(user=User.objects.get(username=self.request.user).id))
-            obj.save()
+    #def post_save(self, obj, created=False):
+    #    if(obj.ressources.count() == 0):
+    #        obj.ressources.clear()
+    #        obj.ressources.add(Ressource.objects.get(user=User.objects.get(username=self.request.user).id))
+    #        obj.save()
 
 class CongeViewSet(viewsets.ModelViewSet):
     """
@@ -217,28 +204,12 @@ class CongeViewSet(viewsets.ModelViewSet):
         obj.type = 'CONGE'
         obj.state = 'CONFIRMED'
 
-    def post_save(self, obj, created=False):
-        if(obj.ressources.count() == 0):
-            obj.ressources.clear()
-            obj.ressources.add(Ressource.objects.get(user=User.objects.get(username=self.request.user).id))
-            obj.save()
+    #def post_save(self, obj, created=False):
+    #    if(obj.ressources.count() == 0):
+    #        obj.ressources.clear()
+    #        obj.ressources.add(Ressource.objects.get(user=User.objects.get(username=self.request.user).id))
+    #        obj.save()
 
-class Type_ActiviteViewSet(viewsets.ModelViewSet):
-    """
-    This endpoint presents code snippets.
-
-    The `highlight` field presents a hyperlink to the hightlighted HTML
-    representation of the code snippet.
-
-    The **owner** of the code snippet may update or delete instances
-    of the code snippet.
-
-    Try it yourself by logging in as one of these four users: **amy**, **max**,
-    **jose** or **aziz**.  The passwords are the same as the usernames.
-    """
-    queryset = Type_Activite.objects.all()
-    serializer_class = Type_ActiviteSerializer
-    permission_classes = (permissions.IsAuthenticatedOrReadOnly,)
 
 class DispoViewSet(viewsets.ViewSet):
     """
@@ -253,8 +224,8 @@ class DispoViewSet(viewsets.ViewSet):
     Try it yourself by logging in as one of these four users: **amy**, **max**,
     **jose** or **aziz**.  The passwords are the same as the usernames.
     """
-    queryset = Event.objects.filter(type='CONGE').order_by('start')
-    serializer_class = CongeSerializer
+    queryset = Event.objects.all()
+    #serializer_class = CongeSerializer
     permission_classes = (permissions.IsAuthenticatedOrReadOnly,)
 
     def list(self, request):
@@ -271,14 +242,15 @@ class DispoViewSet(viewsets.ViewSet):
         #        print(ev.start.strftime("%Y-%m-%d %H:%M:%S")+" "+ev.end.strftime("%Y-%m-%d %H:%M:%S") +" youyou")
         #        print(ev.start.strftime("%Y-%m-%d %H:%M:%S")+ " "+ str((ev.end - ev.start).total_seconds()))
         #        print("----------------------------------------------------------------------------------------")
-        dispos=[]
-        dispo = prestationDispos(parse(request.QUERY_PARAMS.get('date')))
-        dispos.append(dispo)
-        for ressource in Ressource.objects.all():
-            r = None
+        session = time.time()
+        #dispos=[]
+        #dispo = getSelectableRessources(parse(request.QUERY_PARAMS.get('date')),Prestation.objects.filter(id=int(request.QUERY_PARAMS.get('prestation'))).first(),session)
+        #dispos.append(dispo)
+        #for ressource in Ressource.objects.all():
+        #    r = None
             #r = freeTime(parse(request.QUERY_PARAMS.get('date')),ressource)
             #dispos.append(r)
-            print(r)
+        #    print(r)
         #dispos = getRessourcesDispo(Ressource.objects.all(),[],[],parse(request.QUERY_PARAMS.get('date')))
             #for e in r:
             #    dispo=None
@@ -296,8 +268,8 @@ class DispoViewSet(viewsets.ViewSet):
 
         #queryset=prestationDispos(parse(request.QUERY_PARAMS.get('date')))
         #serializer = DispoSerializer(queryset)
-        queryset=getSelectableRessources(Prestation.objects.filter(id=int(request.QUERY_PARAMS.get('prestation'))).first())
-        serializer = SelectableRessourceSerializer(queryset)
+        queryset=getSelectableRessources(parse(request.QUERY_PARAMS.get('date')),Prestation.objects.filter(id=int(request.QUERY_PARAMS.get('prestation'))).first(),session)
+        serializer = DisponibiliteSerializer(queryset)
 
         return Response(serializer.data)
 
@@ -388,10 +360,8 @@ class RessourceDispo(object):
     #ressource = Ressource
 
     def __init__(self):
-        self.ressources = []
         self.types = []
         self.dispos = []
-        self.prestations = []
 
     def __str__(self):
         return ('[%s]' % ', '.join(map(str, self.prestations)))
@@ -400,6 +370,11 @@ class TypeDispo(object):
     def __init__(self):
         self.name = ''
         self.ressources = []
+
+class Disponibilite(object):
+    def __init__(self):
+        self.typeDispo = []
+        self.event = None
 
 class Area(object):
     #start = datetime.now()
@@ -411,6 +386,15 @@ class Area(object):
 
     def __str__(self):
         return self.start.strftime("%Y-%m-%d %H:%M:%S")+" "
+
+class FreeTime(object):
+    def __init__(self,ressource):
+        self.ressource = ressource
+        self.dispos = []
+
+class Reservable(object):
+    def __init__(self):
+        self.event = None
 
 def getDispo(dispo,occupation):
     sd = []
@@ -428,9 +412,11 @@ def getDispo(dispo,occupation):
             o.end = o.end.astimezone(timezone.utc).replace(tzinfo=None)
             for a in sd:
                 print(o.start)
+                print(o.end)
                 print(a.start)
+                print(a.end)
                 # 1
-                if (o.start <= a.start and o.end <= a.end) or (o.start > a.end):
+                if (o.start <= a.start and o.end <= a.start) or (o.start > a.end):
                     print(o.start<a.start)
                     print(o.end<=a.end)
                     print(o.start > a.end)
@@ -439,7 +425,7 @@ def getDispo(dispo,occupation):
                     print("1")
                     pass
                 #2
-                if (o.start < a.start and o.end > a.end):
+                if (o.start <= a.start and o.end >= a.end):
                     print("2")
                     sd.remove(a)
                     break
@@ -452,12 +438,15 @@ def getDispo(dispo,occupation):
                 if (o.start >= a.start and o.end<a.end):
                     print("4")
                     print("normal")
-                    if (o.start is a.start):
+                    if (o.start == a.start):
                         a.start=o.end
+                        if(a.start == a.end):
+                            sd.remove(a)
                     else:
-                        b = Event(start=o.end,end=a.end)
-                        sd.append(b)
-                        a.end = o.start
+                        if(o.end != a.end):
+                            b = Event(start=o.end,end=a.end)
+                            sd.append(b)
+                            a.end = o.start
                         #print(a.start.strftime("%Y-%m-%d %H:%M:%S"))
                         #print(a.end.strftime("%Y-%m-%d %H:%M:%S"))
                         #print(b.start.strftime("%Y-%m-%d %H:%M:%S"))
@@ -564,10 +553,10 @@ def getRessourcesDispo(ressources,oldressources,dispos,date):
 
 def getRessourceDispo(ressource,date):
     day = date.strftime("%a").upper()[0:2]
-    dispo = Event.objects.filter(rule=day).filter(ressources=ressource).order_by("start")
-    dispo = getContinuEvent(dispo)
-    occupation = Event.objects.filter(start__contains=date.strftime("%Y-%m-%d")).filter(ressources=ressource).exclude(type="DISPONIBLE").order_by("start")
-    occupation = getContinuEvent(occupation)
+    dispo = Event.objects.filter(rule=day).filter(ressource=ressource).order_by("start")
+    #dispo = getContinuEvent(dispo)
+    occupation = Event.objects.filter(start__contains=date.strftime("%Y-%m-%d")).filter(ressource=ressource).exclude(type="DISPONIBLE").order_by("start")
+    #occupation = getContinuEvent(occupation)
     for d in dispo:
             d.start = datetime.combine(date.date(),d.start.time())
             d.end = datetime.combine(date.date(),d.end.time())
@@ -579,63 +568,149 @@ def getTimeInEvent(event):
     return delta.seconds/60
 
 
-def prestationDispos(date):
-    resdispo = RessourceDispo()
-    presta = []
-    activ = []
-    types = []
-    ressources = []
-    dispos = []
-    q = Prestation.objects.all()
-    for pres in q:
-        #presta.append(pres)
-        qa = pres.activitys.all()
-        type = []
+def prestationDispos(date,prestation,session,ressources=None):
+    reserv = Reservable()
+    for a in prestation.activitys.all():
         activitys = []
-        activ=[]
-        for a in qa:
-            activitys.append(a)
-            qs = a.types.all()
-            type = []
+        for t in a.types.all():
             types = []
-            for t in qs:
-                type.append(t)
-                res = t.ressource_set.filter(activitys__in=[a])
-                for r in res:
-                    d = getRessourcesDispo([r],[],[],date)
-                    print(d)
-                    for e in d:
-                        te = getTimeInEvent(e)
-                        if(te>=a.duration):
-                            resdispo.dispos.append(e)
-                            if(r not in ressources ):
-                                ressources.append(r)
-                                resdispo.ressources.append(r)
-                        print(te)
-                        print(r)
-                for ress in ressources:
-                    if(ress.type not in types):
-                        types.append(ress.type)
-                        resdispo.types.append(ress.type)
-            if(set(types) == set(type)):
-                if(a not in activ):
-                    activ.append(a)
-        if(set(activitys) == set(activ)):
-            if(pres not in presta):
-                presta.append(pres)
-                resdispo.prestations.append(pres)
-    return resdispo
+            for r in t.ressources.all():
+                d = getRessourceDispo(r,date)
+                ok = False
+                for e in d:
+                    if(getTimeInEvent(e)>=a.duration):
+                        ok = True
+                        break
+                if(ok):
+                    types.append(r)
+            if(types):
+                activitys.append(types)
+        if(activitys.__len__()!=list(a.types.all()).__len__()):
+            return reserv
+        for i in activitys[0]:
+            d = getRessourceDispo(i,date)
+            d = getAllArea(d,a.duration)
+            for e in d:
+                if(getTimeInEvent(e)>=a.duration):
+                    reserv.event = reserveEvent(e,a.duration,session,i,prestation,a)
+                    ok = False
+                    if(activitys.__len__() == 1):
+                        ok = True
+                    for n in range(1,activitys.__len__()):
+                        ok = False
+                        for t in activitys[n]:
+                            if(ok):break
+                            s = getSimilarDispo(getRessourceDispo(t,date),[reserv.event,])
+                            for ax in s:
+                                if(getTimeInEvent(ax)==getTimeInEvent(reserv.event)):
+                                    ok = True
+                                    reserveEvent(ax,a.duration,session,t,prestation,a)
+                                    break
+                        if(not ok):
+                            Event.objects.filter(session=session).delete()
+                            break
+                    if(ok):return reserv
+    return Reservable()
 
-def getSelectableRessources(prestation):
+
+def getSelectableRessources(date,prestation,session,ressources=None):
+    Event.objects.deleteOld()
     types = []
-    typesdispos = []
+    typesdispos = Disponibilite()
+
     for a in prestation.activitys.all():
         for t in a.types.all():
             if(t not in types and t.isSelectable):
                 typedispo = TypeDispo()
                 typedispo.name = t.name
-                typedispo.ressources = t.ressource_set
-                typesdispos.append(typedispo)
+                typedispo.ressources = t.ressources
+                typesdispos.typeDispo.append(typedispo)
                 types.append(t)
-
+    typesdispos.event = prestationDispos(date,prestation,session,ressources).event
     return typesdispos
+
+def reserveEvent(dispo,duration,session,ressource,prestation,activite):
+    e = Event()
+    e.session = session
+    e.ressource = ressource
+    e.type = "OCCUPE"
+    e.state = "WAITING"
+    e.start = dispo.start
+    e.end = e.start + timedelta(seconds=duration*60)
+    e.prestataire = ressource.prestataire
+    e.prestation = prestation
+    e.activity = activite
+    e.save()
+    return e
+
+def getAllArea(dispo,duration):
+    dispos = []
+    for e in dispo:
+        if(getTimeInEvent(e)>= duration):
+            z = Event()
+            z.start = e.start
+            z.end = z.start + timedelta(minutes=duration)
+            dispos.append(z)
+            delta = 5
+            inc = 5
+            while((e.end - timedelta(minutes=duration))> (z.start)):
+                z = Event()
+                z.start = e.start + timedelta(minutes=inc)
+                z.end = z.start + timedelta(minutes=duration)
+                dispos.append(z)
+                inc += 5
+    return dispos
+
+
+class ReservationViewSet(viewsets.ViewSet):
+    """
+    This endpoint presents code snippets.
+
+    The `highlight` field presents a hyperlink to the hightlighted HTML
+    representation of the code snippet.
+
+    The **owner** of the code snippet may update or delete instances
+    of the code snippet.
+
+    Try it yourself by logging in as one of these four users: **amy**, **max**,
+    **jose** or **aziz**.  The passwords are the same as the usernames.
+    """
+
+    authentication_classes = (UnsafeSessionAuthentication,)
+
+    def create(self,request):
+        accept = (request.DATA['accept'] == "true")
+        sessionid = request.DATA['sessionid']
+        num_api = request.DATA['api_key']
+        name=request.DATA['name']
+        email=request.DATA['email']
+        adress=request.DATA['adress']
+        tel=request.DATA['tel']
+        if(not accept):
+            return Response("Erreur: Veuillez accepter les conditions")
+        auth = Authentication.objects.filter(api_key=num_api).first()
+        prestataire = Prestataire.objects.filter(authentication=auth).first()
+        client = Client(name=name,mail=email,adress=adress,phone=tel,prestataire=prestataire)
+        client.save()
+        a = Event.objects.filter(session=sessionid).all()
+        prestation = None
+        start = None
+        end = None
+        for e in a:
+            if(not prestation):
+                prestation = e.prestation
+            if(not start):
+                start = e.start
+                end = e.end
+            if(e.start < start):
+                start = e.start
+            if(e.end > end):
+                end = e.end
+            e.session = None
+            e.client = client
+            e.save()
+            print("youyou")
+        event = Event(start=start,end=end,client=client,prestation=prestation,type="OCCUPE",state="WAITING",prestataire=prestataire)
+        event.save()
+        return Response({"success":"true"})
+

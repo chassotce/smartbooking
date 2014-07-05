@@ -20,7 +20,7 @@ router.register(r'authentication', views.AuthenticationViewSet)
 router.register(r'horaire', views.HoraireViewSet)
 router.register(r'conge', views.CongeViewSet)
 router.register(r'dispo', views.DispoViewSet)
-router.register(r'type_activite', views.Type_ActiviteViewSet)
+router.register(r'reservation', views.ReservationViewSet,base_name='reservation')
 
 urlpatterns = patterns('',
     # Examples:
