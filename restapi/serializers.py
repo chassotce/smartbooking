@@ -1,8 +1,9 @@
 from rest_framework import serializers
-from restapi.models import Prestataire,Type,Activite,Prestation,Client,Ressource,Event,Authentication,WEEK_DAY,EVENT_TYPE
 from django.forms import widgets
 
+from restapi.models import Prestataire,Type,Activite,Prestation,Client,Ressource,Event,Authentication,WEEK_DAY
 
+# Authentication serializer
 class AuthenticationSerializer(serializers.HyperlinkedModelSerializer):
 
     class Meta:
@@ -10,6 +11,7 @@ class AuthenticationSerializer(serializers.HyperlinkedModelSerializer):
         fields = ('url','id',
                   'api_key')
 
+# Prestataire serializer
 class PrestataireSerializer(serializers.HyperlinkedModelSerializer):
     use_condition = serializers.CharField(widget=widgets.Textarea)
     class Meta:
@@ -17,7 +19,7 @@ class PrestataireSerializer(serializers.HyperlinkedModelSerializer):
         fields = ('url','id',
                   'authentication', 'name', 'timezone', 'use_condition')
 
-
+# Type serializer
 class TypeSerializer(serializers.HyperlinkedModelSerializer):
 
     class Meta:
@@ -25,16 +27,14 @@ class TypeSerializer(serializers.HyperlinkedModelSerializer):
         fields = ('url','id',
                 'name','number','isSelectable','ressources','prestataire')
 
-
+# Activite serializer
 class ActiviteSerializer(serializers.HyperlinkedModelSerializer):
-    #types = Type_ActiviteSerializer(source='types',many=True)
-    #types = Type_ActiviteSerializer(source='type_activite_set',many=True)
-    #types = serializers.Serializer(widget=widgets.SelectMultiple,data=Type.objects.all(),instance=Type)
     class Meta:
         model = Activite
         fields = ('url','id',
                 'name', 'duration', 'types','prestataire')
 
+# Prestation serializer
 class PrestationSerializer(serializers.HyperlinkedModelSerializer):
 
     class Meta:
@@ -42,6 +42,7 @@ class PrestationSerializer(serializers.HyperlinkedModelSerializer):
         fields = ('url','id',
                 'name', 'duration','price', 'activitys','activityOrder','prestataire')
 
+# Client serializer
 class ClientSerializer(serializers.HyperlinkedModelSerializer):
 
     class Meta:
@@ -49,6 +50,7 @@ class ClientSerializer(serializers.HyperlinkedModelSerializer):
         fields = ('url','id',
                 'name', 'mail','adress', 'phone','prestataire')
 
+# Ressource serializer
 class RessourceSerializer(serializers.HyperlinkedModelSerializer):
 
     class Meta:
@@ -56,67 +58,29 @@ class RessourceSerializer(serializers.HyperlinkedModelSerializer):
         fields = ('url','id',
                 'name','email','isAdmin','prestataire')
 
-class EventSerializer(serializers.ModelSerializer):
+# Event serializer
+class EventSerializer(serializers.HyperlinkedModelSerializer):
     class Meta:
         model = Event
-        fields = (
+        fields = ('url',
                 'name','type','state','start','end','rule','client','prestation','activity','ressource','session','prestataire')
 
-
-class HoraireSerializer(serializers.ModelSerializer):
+# Horaire serializer
+class HoraireSerializer(serializers.HyperlinkedModelSerializer):
     rule = serializers.ChoiceField(choices=WEEK_DAY)
     class Meta:
         model = Event
-        fields = ('rule',
+        fields = ('url','rule',
                   'start', 'end','ressource','prestataire')
 
-class CongeSerializer(serializers.ModelSerializer):
+class CongeSerializer(serializers.HyperlinkedModelSerializer):
     class Meta:
         model = Event
-        fields = (
-                  'start', 'end','ressource','prestataire')
-
-class AreaSerializer(serializers.Serializer):
-    start = serializers.DateTimeField()
-    end = serializers.DateTimeField()
-
-    def restore_object(self, attrs, instance=None):
-       """
-       Given a dictionary of deserialized field values, either update
-       an existing model instance, or create a new model instance.
-       """
-       if instance is not None:
-           instance.start = attrs.get('start',instance.start)
-           instance.end = attrs.get('end',instance.end)
-           return instance
-       return AreaSerializer(**attrs)
+        fields = ('url',
+                  'name','start', 'end','ressource','prestataire')
 
 
-class FreeSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Event
-        fields = (
-                'start','end')
-
-class DispoSerializer(serializers.Serializer):
-    ressources = RessourceSerializer(many=True)
-    prestations = PrestationSerializer(many=True)
-    types = TypeSerializer(many=True)
-    dispos = FreeSerializer(many=True)
-
-    def restore_object(self, attrs, instance=None):
-        """
-        Given a dictionary of deserialized field values, either update
-        an existing model instance, or create a new model instance.
-        """
-        if instance is not None:
-            instance.ressources = attrs.get('ressource',instance.ressources)
-            instance.prestations = attrs.get('area',instance.prestations)
-            instance.types = attrs.get('area',instance.types)
-            instance.dispos = attrs.get('area',instance.dispos)
-            return instance
-        return DispoSerializer(**attrs)
-
+# SelectableRessources serializer
 class SelectableRessourceSerializer(serializers.Serializer):
     name = serializers.CharField()
     ressources = RessourceSerializer(many=True)
@@ -130,6 +94,7 @@ class SelectableRessourceSerializer(serializers.Serializer):
             return instance
         return SelectableRessourceSerializer(**attrs)
 
+# Disponibilite serializer
 class DisponibiliteSerializer(serializers.Serializer):
     event = EventSerializer()
     typeDispo = SelectableRessourceSerializer(many=True)

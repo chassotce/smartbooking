@@ -1,35 +1,21 @@
+import time
+
 from dateutil.parser import parse
-from django.contrib.auth.models import User
-from django.utils import timezone
-from django.utils.datetime_safe import datetime
-from rest_framework import permissions, status
-from rest_framework import renderers
+from rest_framework import permissions
 from rest_framework import viewsets
-from rest_framework.decorators import action
 from rest_framework.response import Response
-from restapi.models import Prestataire,Type,Activite,Prestation,Client,Ressource,Event,Authentication,EVENT_TYPE
-from restapi.permissions import IsOwnerOrReadOnly
+from restapi.functions import getSelectableRessources
+
+from restapi.models import Prestataire,Type,Activite,Prestation,Client,Ressource,Event,Authentication
 from restapi.serializers import PrestataireSerializer,TypeSerializer,ActiviteSerializer,PrestationSerializer\
     ,ClientSerializer,EventSerializer,RessourceSerializer,AuthenticationSerializer,HoraireSerializer\
-    ,CongeSerializer,DispoSerializer,SelectableRessourceSerializer,DisponibiliteSerializer
-from dateutil.rrule import *
-from django.db.models import Q
-from datetime import timedelta
-import time
+    ,CongeSerializer, DisponibiliteSerializer
 from restapi.permissions import UnsafeSessionAuthentication
+
 
 class AuthenticationViewSet(viewsets.ModelViewSet):
     """
-    This endpoint presents code snippets.
-
-    The `highlight` field presents a hyperlink to the hightlighted HTML
-    representation of the code snippet.
-
-    The **owner** of the code snippet may update or delete instances
-    of the code snippet.
-
-    Try it yourself by logging in as one of these four users: **amy**, **max**,
-    **jose** or **aziz**.  The passwords are the same as the usernames.
+    This endpoint presents Authentication.
     """
     queryset = Authentication.objects.all()
     serializer_class = AuthenticationSerializer
@@ -38,16 +24,7 @@ class AuthenticationViewSet(viewsets.ModelViewSet):
 
 class PrestataireViewSet(viewsets.ModelViewSet):
     """
-    This endpoint presents code snippets.
-
-    The `highlight` field presents a hyperlink to the hightlighted HTML
-    representation of the code snippet.
-
-    The **owner** of the code snippet may update or delete instances
-    of the code snippet.
-
-    Try it yourself by logging in as one of these four users: **amy**, **max**,
-    **jose** or **aziz**.  The passwords are the same as the usernames.
+    This endpoint presents Prestataire.
     """
     queryset = Prestataire.objects.all()
     serializer_class = PrestataireSerializer
@@ -55,16 +32,7 @@ class PrestataireViewSet(viewsets.ModelViewSet):
 
 class TypeViewSet(viewsets.ModelViewSet):
     """
-    This endpoint presents code snippets.
-
-    The `highlight` field presents a hyperlink to the hightlighted HTML
-    representation of the code snippet.
-
-    The **owner** of the code snippet may update or delete instances
-    of the code snippet.
-
-    Try it yourself by logging in as one of these four users: **amy**, **max**,
-    **jose** or **aziz**.  The passwords are the same as the usernames.
+    This endpoint presents Type.
     """
     queryset = Type.objects.all()
     serializer_class = TypeSerializer
@@ -72,16 +40,7 @@ class TypeViewSet(viewsets.ModelViewSet):
 
 class ActiviteViewSet(viewsets.ModelViewSet):
     """
-    This endpoint presents code snippets.
-
-    The `highlight` field presents a hyperlink to the hightlighted HTML
-    representation of the code snippet.
-
-    The **owner** of the code snippet may update or delete instances
-    of the code snippet.
-
-    Try it yourself by logging in as one of these four users: **amy**, **max**,
-    **jose** or **aziz**.  The passwords are the same as the usernames.
+    This endpoint presents Activity.
     """
     queryset = Activite.objects.all()
     serializer_class = ActiviteSerializer
@@ -89,16 +48,7 @@ class ActiviteViewSet(viewsets.ModelViewSet):
 
 class PrestationViewSet(viewsets.ModelViewSet):
     """
-    This endpoint presents code snippets.
-
-    The `highlight` field presents a hyperlink to the hightlighted HTML
-    representation of the code snippet.
-
-    The **owner** of the code snippet may update or delete instances
-    of the code snippet.
-
-    Try it yourself by logging in as one of these four users: **amy**, **max**,
-    **jose** or **aziz**.  The passwords are the same as the usernames.
+    This endpoint presents Prestation.
     """
     queryset = Prestation.objects.all()
     serializer_class = PrestationSerializer
@@ -106,16 +56,7 @@ class PrestationViewSet(viewsets.ModelViewSet):
 
 class ClientViewSet(viewsets.ModelViewSet):
     """
-    This endpoint presents code snippets.
-
-    The `highlight` field presents a hyperlink to the hightlighted HTML
-    representation of the code snippet.
-
-    The **owner** of the code snippet may update or delete instances
-    of the code snippet.
-
-    Try it yourself by logging in as one of these four users: **amy**, **max**,
-    **jose** or **aziz**.  The passwords are the same as the usernames.
+    This endpoint presents Client.
     """
     queryset = Client.objects.all()
     serializer_class = ClientSerializer
@@ -123,16 +64,7 @@ class ClientViewSet(viewsets.ModelViewSet):
 
 class RessourceViewSet(viewsets.ModelViewSet):
     """
-    This endpoint presents code snippets.
-
-    The `highlight` field presents a hyperlink to the hightlighted HTML
-    representation of the code snippet.
-
-    The **owner** of the code snippet may update or delete instances
-    of the code snippet.
-
-    Try it yourself by logging in as one of these four users: **amy**, **max**,
-    **jose** or **aziz**.  The passwords are the same as the usernames.
+    This endpoint presents Ressource.
     """
     queryset = Ressource.objects.all()
     serializer_class = RessourceSerializer
@@ -140,16 +72,7 @@ class RessourceViewSet(viewsets.ModelViewSet):
 
 class EventViewSet(viewsets.ModelViewSet):
     """
-    This endpoint presents code snippets.
-
-    The `highlight` field presents a hyperlink to the hightlighted HTML
-    representation of the code snippet.
-
-    The **owner** of the code snippet may update or delete instances
-    of the code snippet.
-
-    Try it yourself by logging in as one of these four users: **amy**, **max**,
-    **jose** or **aziz**.  The passwords are the same as the usernames.
+    This endpoint presents Event.
     """
     queryset = Event.objects.all()
     serializer_class = EventSerializer
@@ -158,16 +81,7 @@ class EventViewSet(viewsets.ModelViewSet):
 
 class HoraireViewSet(viewsets.ModelViewSet):
     """
-    This endpoint presents code snippets.
-
-    The `highlight` field presents a hyperlink to the hightlighted HTML
-    representation of the code snippet.
-
-    The **owner** of the code snippet may update or delete instances
-    of the code snippet.
-
-    Try it yourself by logging in as one of these four users: **amy**, **max**,
-    **jose** or **aziz**.  The passwords are the same as the usernames.
+    This endpoint presents Horaire.
     """
     queryset = Event.objects.filter(type='DISPONIBLE').order_by('start')
     serializer_class = HoraireSerializer
@@ -177,6 +91,7 @@ class HoraireViewSet(viewsets.ModelViewSet):
         obj.type = 'DISPONIBLE'
         obj.state = 'CONFIRMED'
 
+    # def the ressource after save the event (maybe use in next version)
     #def post_save(self, obj, created=False):
     #    if(obj.ressources.count() == 0):
     #        obj.ressources.clear()
@@ -185,16 +100,7 @@ class HoraireViewSet(viewsets.ModelViewSet):
 
 class CongeViewSet(viewsets.ModelViewSet):
     """
-    This endpoint presents code snippets.
-
-    The `highlight` field presents a hyperlink to the hightlighted HTML
-    representation of the code snippet.
-
-    The **owner** of the code snippet may update or delete instances
-    of the code snippet.
-
-    Try it yourself by logging in as one of these four users: **amy**, **max**,
-    **jose** or **aziz**.  The passwords are the same as the usernames.
+    This endpoint presents Conge.
     """
     queryset = Event.objects.filter(type='CONGE').order_by('start')
     serializer_class = CongeSerializer
@@ -204,6 +110,7 @@ class CongeViewSet(viewsets.ModelViewSet):
         obj.type = 'CONGE'
         obj.state = 'CONFIRMED'
 
+    # def the ressource after save the event (maybe use in next version)
     #def post_save(self, obj, created=False):
     #    if(obj.ressources.count() == 0):
     #        obj.ressources.clear()
@@ -213,469 +120,22 @@ class CongeViewSet(viewsets.ModelViewSet):
 
 class DispoViewSet(viewsets.ViewSet):
     """
-    This endpoint presents code snippets.
-
-    The `highlight` field presents a hyperlink to the hightlighted HTML
-    representation of the code snippet.
-
-    The **owner** of the code snippet may update or delete instances
-    of the code snippet.
-
-    Try it yourself by logging in as one of these four users: **amy**, **max**,
-    **jose** or **aziz**.  The passwords are the same as the usernames.
+    This endpoint presents Dispo, date is necessary.
     """
-    queryset = Event.objects.all()
-    #serializer_class = CongeSerializer
-    permission_classes = (permissions.IsAuthenticatedOrReadOnly,)
 
     def list(self, request):
-        #
-        #print(self.request.QUERY_PARAMS.get('date'))
-        #print(self.request.QUERY_PARAMS.get('key'))
-        #s = Event.objects.exclude(rule='')
-        #day = parse(request.QUERY_PARAMS.get('date')).strftime("%a").upper()[0:2]
-        #s = Event.objects.filter(rule=day)
-        #for e in s:
-        #    print(e.rule+" "+e.ressources.all().first().name)
-        #    events = Event.objects.filter(Q(rule=day)|Q(start=request.QUERY_PARAMS.get('date'))).filter(ressources= e.ressources.all().first()).order_by("start")
-        #    for ev in events:
-        #        print(ev.start.strftime("%Y-%m-%d %H:%M:%S")+" "+ev.end.strftime("%Y-%m-%d %H:%M:%S") +" youyou")
-        #        print(ev.start.strftime("%Y-%m-%d %H:%M:%S")+ " "+ str((ev.end - ev.start).total_seconds()))
-        #        print("----------------------------------------------------------------------------------------")
         session = time.time()
-        #dispos=[]
-        #dispo = getSelectableRessources(parse(request.QUERY_PARAMS.get('date')),Prestation.objects.filter(id=int(request.QUERY_PARAMS.get('prestation'))).first(),session)
-        #dispos.append(dispo)
-        #for ressource in Ressource.objects.all():
-        #    r = None
-            #r = freeTime(parse(request.QUERY_PARAMS.get('date')),ressource)
-            #dispos.append(r)
-        #    print(r)
-        #dispos = getRessourcesDispo(Ressource.objects.all(),[],[],parse(request.QUERY_PARAMS.get('date')))
-            #for e in r:
-            #    dispo=None
-            #    dispo = {'ressource':e.ressource,'area':e.area}
-            #    dispos.append(dispo)
-            #    for t in e.area:
-            #        print(t.start.strftime("%Y-%m-%d %H:%M:%S")+" "+t.end.strftime("%Y-%m-%d %H:%M:%S")+" "+e.ressource.name)
-        #queryset = [{'start':'2014-08-06 10:55:00',},{'start':'2014-08-06 10:55:00','start':'2014-08-06 10:55:00','start':'2014-08-06 10:55:00','start':'2014-08-06 10:55:00'}]
-        #print(datetime.now().date())
-        #t = '2014-08-06 10:55:00'
-        #print(timezone.localtime(timezone.now()))
-        #tc = datetime.now().strftime("%Y-%m-%d")+" "+ t.split(' ')[1]
-        #for d in list(rrule(DAILY, byweekday=(MO),count=100,dtstart=parse(tc),)):
-        #    print(d)
-
-        #queryset=prestationDispos(parse(request.QUERY_PARAMS.get('date')))
-        #serializer = DispoSerializer(queryset)
-        queryset=getSelectableRessources(parse(request.QUERY_PARAMS.get('date')),Prestation.objects.filter(id=int(request.QUERY_PARAMS.get('prestation'))).first(),session)
+        queryset=getSelectableRessources(parse(request.QUERY_PARAMS.get('date')),Prestation.objects.filter(
+            id=int(request.QUERY_PARAMS.get('prestation'))).first(),session)
         serializer = DisponibiliteSerializer(queryset)
 
         return Response(serializer.data)
 
-#def freeTime(date,ressource):
-#    day = date.strftime("%a").upper()[0:2]
-#    dispo = Event.objects.filter(rule=day).filter(ressources=ressource).order_by("start")
-#    dispo = getContinuEvent(dispo)
-#    occupation = Event.objects.filter(start__contains=date.strftime("%Y-%m-%d")).filter(ressources=ressource).exclude(type="DISPONIBLE").order_by("start")
-#    occupation = getContinuEvent(occupation)
-#    dispos = getDispo(dispo,occupation)
-#    print(dispos)
-#    print(dispo)
-#    print(occupation)
-#    print("same")
-#    same = getSimilarDispo(dispos,dispos)
-#
-#    print(same)
-#
-#    if not occupation:
-#        n = None
-#        n = FreeTime(ressource)
-#        n.area.clear()
-#        for d in dispo:
-#            d.start = datetime.combine(date.date(),d.start.time())
-#            d.end = datetime.combine(date.date(),d.end.time())
-#            n.area.append(Area(d.start,d.end))
-#            print("youyou")
-#        print('empty')
-#        return n
-#    n = FreeTime(ressource)
-#    for d in dispo:
-#        d.start = datetime.combine(date.date(),d.start.time())
-#        d.end = datetime.combine(date.date(),d.end.time())
-#        n.area.append(Area(d.start,d.end))
-#        print(d.start.strftime("%Y-%m-%d %H:%M:%S")+" "+d.end.strftime("%Y-%m-%d %H:%M:%S") + " " + ressource.name)
-#        for o in occupation:
-#            print(o.start.strftime("%Y-%m-%d %H:%M:%S")+" "+o.end.strftime("%Y-%m-%d %H:%M:%S") + " " + ressource.name)
-#            #o.start = o.start.astimezone(timezone.utc).replace(tzinfo=None)
-#            #o.end = o.end.astimezone(timezone.utc).replace(tzinfo=None)
-#            for a in n.area:
-#                print(o.start)
-#                print(a.start)
-#                # 1
-#                if (o.start < a.start and o.end <= a.end) or (o.start > a.end):
-#                    print(o.start<a.start)
-#                    print(o.end<=a.end)
-#                    print(o.start > a.end)
-#                    print(o.start.strftime("%Y-%m-%d %H:%M:%S"))
-#                    print(a.end.strftime("%Y-%m-%d %H:%M:%S"))
-#                    print("1")
-#                    pass
-#                #2
-#                if (o.start < a.start and o.end > a.end):
-#                    print("2")
-#                    n.area.remove(a)
-#                    break
-#                #3
-#                if (o.start < a.start and (o.end > a.start and o.end <a.end)):
-#                    print("3")
-#                    a.start = o.end
-#                    pass
-#                #4
-#                if (o.start >= a.start and o.end<a.end):
-#                    print("4")
-#                    print("normal")
-#                    if (o.start is a.start):
-#                        a.start=o.end
-#                    else:
-#                        b = Area(o.end,a.end)
-#                        n.area.append(b)
-#                        a.end = o.start
-#                        #print(a.start.strftime("%Y-%m-%d %H:%M:%S"))
-#                        #print(a.end.strftime("%Y-%m-%d %H:%M:%S"))
-#                        #print(b.start.strftime("%Y-%m-%d %H:%M:%S"))
-#                        #print(b.end.strftime("%Y-%m-%d %H:%M:%S"))
-#                    pass
-#                #5
-#                if (o.start >= a.start and o.end>a.end):
-#                    print("5")
-#                    a.end = o.start
-#                    pass
-#    for ev in occupation:
-#        print(ev.start.strftime("%Y-%m-%d %H:%M:%S")+" "+ev.end.strftime("%Y-%m-%d %H:%M:%S") + " " + ev.name + " " + ressource.name)
-#    return n
-
-class RessourceDispo(object):
-    #area = []
-    #ressource = Ressource
-
-    def __init__(self):
-        self.types = []
-        self.dispos = []
-
-    def __str__(self):
-        return ('[%s]' % ', '.join(map(str, self.prestations)))
-
-class TypeDispo(object):
-    def __init__(self):
-        self.name = ''
-        self.ressources = []
-
-class Disponibilite(object):
-    def __init__(self):
-        self.typeDispo = []
-        self.event = None
-
-class Area(object):
-    #start = datetime.now()
-    #end = datetime.now()
-
-    def __init__(self,start,end):
-        self.start = start
-        self.end = end
-
-    def __str__(self):
-        return self.start.strftime("%Y-%m-%d %H:%M:%S")+" "
-
-class FreeTime(object):
-    def __init__(self,ressource):
-        self.ressource = ressource
-        self.dispos = []
-
-class Reservable(object):
-    def __init__(self):
-        self.event = None
-
-def getDispo(dispo,occupation):
-    sd = []
-    for d in dispo:
-        #d.start = datetime.combine(date.date(),d.start.time())
-        #d.end = datetime.combine(date.date(),d.end.time())
-        #n.area.append(Area(d.start,d.end))
-        #d.start = d.start.astimezone(timezone.utc).replace(tzinfo=None)
-        #d.end = d.end.astimezone(timezone.utc).replace(tzinfo=None)
-        sd.append(d)
-        print(d.start.strftime("%Y-%m-%d %H:%M:%S")+" "+d.end.strftime("%Y-%m-%d %H:%M:%S") + " " + d.name)
-        for o in occupation:
-            print(o.start.strftime("%Y-%m-%d %H:%M:%S")+" "+o.end.strftime("%Y-%m-%d %H:%M:%S") + " " + d.name)
-            o.start = o.start.astimezone(timezone.utc).replace(tzinfo=None)
-            o.end = o.end.astimezone(timezone.utc).replace(tzinfo=None)
-            for a in sd:
-                print(o.start)
-                print(o.end)
-                print(a.start)
-                print(a.end)
-                # 1
-                if (o.start <= a.start and o.end <= a.start) or (o.start > a.end):
-                    print(o.start<a.start)
-                    print(o.end<=a.end)
-                    print(o.start > a.end)
-                    print(o.start.strftime("%Y-%m-%d %H:%M:%S"))
-                    print(a.end.strftime("%Y-%m-%d %H:%M:%S"))
-                    print("1")
-                    pass
-                #2
-                if (o.start <= a.start and o.end >= a.end):
-                    print("2")
-                    sd.remove(a)
-                    break
-                #3
-                if (o.start < a.start and (o.end > a.start and o.end <a.end)):
-                    print("3")
-                    a.start = o.end
-                    pass
-                #4
-                if (o.start >= a.start and o.end<a.end):
-                    print("4")
-                    print("normal")
-                    if (o.start == a.start):
-                        a.start=o.end
-                        if(a.start == a.end):
-                            sd.remove(a)
-                    else:
-                        if(o.end != a.end):
-                            b = Event(start=o.end,end=a.end)
-                            sd.append(b)
-                            a.end = o.start
-                        #print(a.start.strftime("%Y-%m-%d %H:%M:%S"))
-                        #print(a.end.strftime("%Y-%m-%d %H:%M:%S"))
-                        #print(b.start.strftime("%Y-%m-%d %H:%M:%S"))
-                        #print(b.end.strftime("%Y-%m-%d %H:%M:%S"))
-                    pass
-                #5
-                if (o.start >= d.start and o.start < d.end) and (o.end>d.end):
-                    print("5")
-                    a.end = o.start
-                    pass
-    return sd
-
-def getSimilarDispo(dispo1,dispo2):
-    sd = []
-    if(not dispo1 or not dispo2):
-        return []
-
-    for d in dispo1:
-        #d.start = datetime.combine(date.date(),d.start.time())
-        #d.end = datetime.combine(date.date(),d.end.time())
-        #n.area.append(Area(d.start,d.end))
-        #sd.append(d)
-        print(d.start.strftime("%Y-%m-%d %H:%M:%S")+" "+d.end.strftime("%Y-%m-%d %H:%M:%S") + " " + d.name)
-        for o in dispo2:
-            print(o.start.strftime("%Y-%m-%d %H:%M:%S")+" "+o.end.strftime("%Y-%m-%d %H:%M:%S") + " " + d.name)
-            #o.start = o.start.astimezone(timezone.utc).replace(tzinfo=None)
-            #o.end = o.end.astimezone(timezone.utc).replace(tzinfo=None)
-            # 1
-            if (o.start < d.start and o.end <= d.end) or (o.start > d.end):
-                print(o.start<d.start)
-                print(o.end<=d.end)
-                print(o.start > d.end)
-                print(o.start.strftime("%Y-%m-%d %H:%M:%S"))
-                print(d.end.strftime("%Y-%m-%d %H:%M:%S"))
-                print("1")
-                pass
-            #2
-            if (o.start < d.start and o.end > d.end):
-                print("2")
-                sd.append(d)
-                pass
-            #3
-            if (o.start < d.start and (o.end > d.start and o.end <d.end)):
-                print("3")
-                b = Event(start=d.start,end=o.end)
-                sd.append(b)
-                pass
-            #4
-            if (o.start >= d.start and o.end<=d.end):
-                print("4")
-                print("normal")
-                b = Event(start=o.start,end=o.end)
-                sd.append(b)
-                pass
-            #5
-            if (o.start >= d.start and o.start < d.end) and (o.end>d.end):
-                print("5")
-                b = Event(start=o.start,end=d.end)
-                sd.append(b)
-                pass
-    return sd
-
-def getContinuEvent(events):
-    ce = []
-    for e in events:
-        a = Event(start=e.start,end=e.end)
-        for i in events:
-            if (i is a):
-                pass
-            if (i.start<a.start):
-                pass
-            if (i.start<a.end and i.end > a.end):
-                a.end = i.end
-            break
-        ce.append(a)
-        pass
-    return ce
-
-def getRessourcesDispo(ressources,oldressources,dispos,date):
-    for r in ressources:
-        if(not r in oldressources):
-
-            dispo = getRessourceDispo(r,date)
-            if(not dispo):
-                return []
-
-            if(dispos and dispo):
-                dispo = getSimilarDispo(dispo,dispos)
-            oldressources.append(r)
-            ressourc = r.ressources.all()
-            res = []
-            for rr in ressourc:
-                res.append(rr)
-            for o in oldressources:
-                if(o in res):
-                    res.remove(o)
-
-            if(res):
-                dispos = getSimilarDispo(getRessourcesDispo(res,oldressources,dispo,date),dispo)
-                return dispos
-            else:
-                return dispo
-        pass
-
-def getRessourceDispo(ressource,date):
-    day = date.strftime("%a").upper()[0:2]
-    dispo = Event.objects.filter(rule=day).filter(ressource=ressource).order_by("start")
-    #dispo = getContinuEvent(dispo)
-    occupation = Event.objects.filter(start__contains=date.strftime("%Y-%m-%d")).filter(ressource=ressource).exclude(type="DISPONIBLE").order_by("start")
-    #occupation = getContinuEvent(occupation)
-    for d in dispo:
-            d.start = datetime.combine(date.date(),d.start.time())
-            d.end = datetime.combine(date.date(),d.end.time())
-    return getDispo(dispo,occupation)
-
-def getTimeInEvent(event):
-    delta = event.end - event.start
-    print(delta.seconds/60)
-    return delta.seconds/60
-
-
-def prestationDispos(date,prestation,session,ressources=None):
-    reserv = Reservable()
-    for a in prestation.activitys.all():
-        activitys = []
-        for t in a.types.all():
-            types = []
-            for r in t.ressources.all():
-                d = getRessourceDispo(r,date)
-                ok = False
-                for e in d:
-                    if(getTimeInEvent(e)>=a.duration):
-                        ok = True
-                        break
-                if(ok):
-                    types.append(r)
-            if(types):
-                activitys.append(types)
-        if(activitys.__len__()!=list(a.types.all()).__len__()):
-            return reserv
-        for i in activitys[0]:
-            d = getRessourceDispo(i,date)
-            d = getAllArea(d,a.duration)
-            for e in d:
-                if(getTimeInEvent(e)>=a.duration):
-                    reserv.event = reserveEvent(e,a.duration,session,i,prestation,a)
-                    ok = False
-                    if(activitys.__len__() == 1):
-                        ok = True
-                    for n in range(1,activitys.__len__()):
-                        ok = False
-                        for t in activitys[n]:
-                            if(ok):break
-                            s = getSimilarDispo(getRessourceDispo(t,date),[reserv.event,])
-                            for ax in s:
-                                if(getTimeInEvent(ax)==getTimeInEvent(reserv.event)):
-                                    ok = True
-                                    reserveEvent(ax,a.duration,session,t,prestation,a)
-                                    break
-                        if(not ok):
-                            Event.objects.filter(session=session).delete()
-                            break
-                    if(ok):return reserv
-    return Reservable()
-
-
-def getSelectableRessources(date,prestation,session,ressources=None):
-    Event.objects.deleteOld()
-    types = []
-    typesdispos = Disponibilite()
-
-    for a in prestation.activitys.all():
-        for t in a.types.all():
-            if(t not in types and t.isSelectable):
-                typedispo = TypeDispo()
-                typedispo.name = t.name
-                typedispo.ressources = t.ressources
-                typesdispos.typeDispo.append(typedispo)
-                types.append(t)
-    typesdispos.event = prestationDispos(date,prestation,session,ressources).event
-    return typesdispos
-
-def reserveEvent(dispo,duration,session,ressource,prestation,activite):
-    e = Event()
-    e.session = session
-    e.ressource = ressource
-    e.type = "OCCUPE"
-    e.state = "WAITING"
-    e.start = dispo.start
-    e.end = e.start + timedelta(seconds=duration*60)
-    e.prestataire = ressource.prestataire
-    e.prestation = prestation
-    e.activity = activite
-    e.save()
-    return e
-
-def getAllArea(dispo,duration):
-    dispos = []
-    for e in dispo:
-        if(getTimeInEvent(e)>= duration):
-            z = Event()
-            z.start = e.start
-            z.end = z.start + timedelta(minutes=duration)
-            dispos.append(z)
-            delta = 5
-            inc = 5
-            while((e.end - timedelta(minutes=duration))> (z.start)):
-                z = Event()
-                z.start = e.start + timedelta(minutes=inc)
-                z.end = z.start + timedelta(minutes=duration)
-                dispos.append(z)
-                inc += 5
-    return dispos
-
 
 class ReservationViewSet(viewsets.ViewSet):
     """
-    This endpoint presents code snippets.
-
-    The `highlight` field presents a hyperlink to the hightlighted HTML
-    representation of the code snippet.
-
-    The **owner** of the code snippet may update or delete instances
-    of the code snippet.
-
-    Try it yourself by logging in as one of these four users: **amy**, **max**,
-    **jose** or **aziz**.  The passwords are the same as the usernames.
+    This endpoint is for book a prestation.
     """
-
     authentication_classes = (UnsafeSessionAuthentication,)
 
     def create(self,request):
@@ -709,8 +169,26 @@ class ReservationViewSet(viewsets.ViewSet):
             e.session = None
             e.client = client
             e.save()
-            print("youyou")
         event = Event(start=start,end=end,client=client,prestation=prestation,type="OCCUPE",state="WAITING",prestataire=prestataire)
         event.save()
         return Response({"success":"true"})
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 

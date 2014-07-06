@@ -1,10 +1,12 @@
 from django.contrib import admin
-from restapi.models import Ressource
 from django.contrib.auth.admin import UserAdmin
 from django.contrib.auth.models import User
 
+from restapi.models import Ressource
 
-# Define an inline admin descriptor for Employee model
+
+
+# Define an inline admin descriptor for Ressource model
 # which acts a bit like a singleton
 class RessourceInline(admin.StackedInline):
     model = Ressource

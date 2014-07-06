@@ -1,11 +1,16 @@
+import time
+from datetime import timedelta
+
 from django.db import models
 from django.contrib.auth.models import User
 from django.utils.datetime_safe import datetime
-import pytz,time
-from datetime import timedelta
+import pytz
 
-# Create your models here.
+
+# List of timezones
 TIMEZONES = [(x, x) for x in pytz.common_timezones]
+
+# Event type list
 EVENT_TYPE = (
     ('OCCUPE','OCCUPE'),
     ('CONGE','CONGE'),
@@ -13,12 +18,14 @@ EVENT_TYPE = (
     ('DISPONIBLE','DISPONIBLE'),
 )
 
+# Event state list
 EVENT_STATE = (
     ('WAITING','WAITING'),
     ('CONFIRMED','CONFIRMED'),
     ('CANCELED','CANCELED'),
 )
 
+# Day of week list
 WEEK_DAY = (
     ('MO','LUNDI'),
     ('TU','MARDI'),
@@ -29,20 +36,24 @@ WEEK_DAY = (
     ('SU','DIMANCHE')
 )
 
-
+'''
+MODELS
+'''
+# Prestataire model
 class Prestataire(models.Model):
     name = models.CharField(max_length=255)
     timezone = models.CharField(choices=TIMEZONES,default='Europe/Zurich',max_length=250)
     use_condition = models.CharField(max_length=1024)
     authentication = models.ForeignKey('Authentication')
 
-    def __str__(self):              # __unicode__ on Python 2
+    def __str__(self):
         return self.name
 
+# Authentication model
 class Authentication(models.Model):
     api_key = models.CharField(unique=True,max_length=255)
 
-
+# Type model
 class Type(models.Model):
     name = models.CharField(max_length=255)
     isSelectable = models.BooleanField()
@@ -50,18 +61,20 @@ class Type(models.Model):
     ressources = models.ManyToManyField('Ressource')
     prestataire = models.ForeignKey('Prestataire')
 
-    def __str__(self):              # __unicode__ on Python 2
+    def __str__(self):
         return self.name
 
+# Activite model
 class Activite(models.Model):
     name = models.CharField(max_length=255)
     duration = models.PositiveIntegerField()
     types = models.ManyToManyField(Type)
     prestataire = models.ForeignKey('Prestataire')
 
-    def __str__(self):              # __unicode__ on Python 2
+    def __str__(self):
         return self.name
 
+# Prestation model
 class Prestation(models.Model):
     name = models.CharField(max_length=255)
     duration = models.PositiveIntegerField()
@@ -70,9 +83,10 @@ class Prestation(models.Model):
     activityOrder = models.CharField(max_length=1024)
     prestataire = models.ForeignKey('Prestataire')
 
-    def __str__(self):              # __unicode__ on Python 2
+    def __str__(self):
         return self.name
 
+# Client model
 class Client(models.Model):
     name = models.CharField(max_length=255)
     mail = models.EmailField()
@@ -80,10 +94,10 @@ class Client(models.Model):
     phone = models.CharField(max_length=255)
     prestataire = models.ForeignKey('Prestataire')
 
-    def __str__(self):              # __unicode__ on Python 2
+    def __str__(self):
         return self.name
 
-
+# Ressource model
 class Ressource(models.Model):
     user = models.OneToOneField(User,blank=True)
     name = models.CharField(max_length=255)
@@ -91,12 +105,14 @@ class Ressource(models.Model):
     isAdmin = models.BooleanField()
     prestataire = models.ForeignKey('Prestataire')
 
-    def __str__(self):              # __unicode__ on Python 2
+    def __str__(self):
         return self.name
 
+# Manager to add function to Event model
 class EventManager(models.Manager):
-    def deleteOld(self):
 
+    # Delete all event with session > 5 min
+    def deleteOld(self):
         es = self.exclude(session__isnull=True).all()
         ts = time.time()
         st = datetime.fromtimestamp(ts)
@@ -104,9 +120,8 @@ class EventManager(models.Manager):
         for e in es:
             if(datetime.fromtimestamp(e.session) < st):
                 e.delete()
-            print(e.session)
 
-
+# Event model
 class Event(models.Model):
     name = models.CharField(max_length=255)
     type = models.CharField(max_length=255,choices=EVENT_TYPE)
@@ -122,5 +137,26 @@ class Event(models.Model):
     prestataire = models.ForeignKey('Prestataire')
     objects=EventManager()
 
-    def __str__(self):              # __unicode__ on Python 2
+    def __str__(self):
         return self.name+" "+self.type
+
+
+'''
+OBJECTS
+'''
+# Object content name of type and ressources
+class TypeDispo(object):
+    def __init__(self):
+        self.name = ''
+        self.ressources = []
+
+# Object content event disponible and typeDispo
+class Disponibilite(object):
+    def __init__(self):
+        self.typeDispo = []
+        self.event = None
+
+# Object contenent reservable event
+class Reservable(object):
+    def __init__(self):
+        self.event = None

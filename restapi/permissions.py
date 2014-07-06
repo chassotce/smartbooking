@@ -2,6 +2,7 @@ from rest_framework import permissions
 
 from rest_framework.authentication import SessionAuthentication
 
+# Authentication to not control CSRF
 class UnsafeSessionAuthentication(SessionAuthentication):
 
     def authenticate(self, request):
